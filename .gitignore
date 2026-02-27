@@ -1,0 +1,26 @@
+# Ympäristö
+.env
+.venv/
+uv.lock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+
+# Data
+data/app.db
+data/examples.json
+
+# Claude Code
+.claude/settings.local.json
+
+# Playwright / väliaikaiset
+.playwright-mcp/
+/tmp/
+
+# Muut
+*.log

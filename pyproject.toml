@@ -1,0 +1,35 @@
+[project]
+name = "soittolista-suosittelija"
+version = "0.1.0"
+description = "AI-avusteinen Spotify-soittolistan rakentaja"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "jinja2>=3.1.4",
+    "python-multipart>=0.0.18",
+    "httpx>=0.28.0",
+    "aiosqlite>=0.20.0",
+    "python-dotenv>=1.0.1",
+    "itsdangerous>=2.2.0",
+    "dspy>=3.1.3",
+    "google-genai>=1.0.0",
+    "mcp[cli]>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app", "ai", "mcp_servers"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

@@ -1,0 +1,100 @@
+:root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #1db954;
+    --green-dark: #158a3e;
+    font-size: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+}
+
+header {
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 2rem;
+}
+
+nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.logo { color: var(--green); font-weight: 700; font-size: 1.1rem; text-decoration: none; }
+.user { color: var(--muted); margin-left: auto; }
+
+main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.hero { text-align: center; padding: 3rem 0 2rem; }
+.hero.centered { padding: 5rem 0; }
+.hero h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+.hero p { color: var(--muted); font-size: 1.1rem; margin-bottom: 1.5rem; }
+
+h2 { margin-bottom: 1rem; font-size: 1.2rem; color: var(--muted); }
+
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.option-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text);
+    transition: border-color 0.15s, transform 0.1s;
+}
+
+.option-card:hover {
+    border-color: var(--green);
+    transform: translateY(-2px);
+}
+
+.option-card .icon { font-size: 1.8rem; display: block; margin-bottom: 0.5rem; }
+.option-card strong { display: block; margin-bottom: 0.25rem; }
+.option-card p { color: var(--muted); font-size: 0.875rem; }
+
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: var(--surface);
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: var(--green);
+    border-color: var(--green);
+    color: #000;
+}
+
+.btn-primary:hover { background: var(--green-dark); }
+.btn-lg { padding: 0.75rem 2rem; font-size: 1rem; }
+.btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+
+#playlist-area { margin-top: 1rem; }

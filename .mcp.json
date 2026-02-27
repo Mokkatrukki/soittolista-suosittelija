@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "spotify": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/spotify_mcp.py"],
+      "cwd": "/home/mokka/projektit/soittolista-suosittelija"
+    },
+    "lastfm": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/lastfm_mcp.py"],
+      "cwd": "/home/mokka/projektit/soittolista-suosittelija"
+    },
+    "music_discovery": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/music_discovery_mcp.py"],
+      "cwd": "/home/mokka/projektit/soittolista-suosittelija"
+    }
+  }
+}
