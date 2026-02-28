@@ -32,6 +32,12 @@ MUSIC_SHOWS = {
     "1-64590159": "Radio Suomen Musiikki-ilta",
     "1-4409832": "Iskelmäradio",
     "1-1479287": "Entisten nuorten sävellahja",
+    # Biisilista-formaatti (Artisti - Kappale)
+    "1-51013437": "Anne Lainto <3 Rock",
+    "1-71115455": "YleX Vaihtoehto: Raine Laaksonen",
+    "1-72923904": "Menomesta",
+    "1-2069638": "Sekahaku",
+    "1-4658788": "Toni Laaksosen Lauantaitanssit",
 }
 
 
@@ -44,23 +50,64 @@ async def _areena_get(path: str, extra: dict = None) -> dict:
 
 
 def _parse_tracks(description: str) -> list[dict]:
-    """Parsii 'Artisti: Kappale' -rivit kuvauksesta."""
+    """Parsii kappalelistan kuvauksesta.
+
+    Tukee formaatteja:
+    - 'Artisti: Kappale' tai 'N. Artisti: Kappale'  (Kissankehto, Sekahaku, klassinen)
+    - 'N. Artisti - Kappale' tai 'Artisti - Kappale' (Anne Lainto, YleX Vaihtoehto)
+    - 'ARTISTI - Kappale' ilman otsikkoa              (Menomesta)
+    """
     tracks = []
+
+    # --- Moodi 1: BIISILISTA / Soittolista -otsikon jälkeen Artisti - Kappale ---
+    biisilista_m = re.search(
+        r'(?:BIISILISTA|Biisilista|Soittolista|SOITTOLISTA)\s*:?\s*\n',
+        description,
+    )
+    if biisilista_m:
+        section = description[biisilista_m.end():]
+        for line in section.splitlines():
+            line = line.strip()
+            if not line or ' - ' not in line:
+                continue
+            line = re.sub(r'^\d+\.\s*', '', line)  # poista "1. "
+            parts = line.split(' - ', 1)
+            if len(parts) != 2:
+                continue
+            artist, title = parts[0].strip(), parts[1].strip()
+            # Poista huomiot: "Kappale / KUUNTELIJAN VAIHTOEHTO" tms.
+            title = re.sub(r'\s*/\s*\S.*$', '', title).strip()
+            if artist and title and len(artist) < 80:
+                tracks.append({"artist": artist, "title": title})
+        return tracks
+
+    # --- Moodi 2: pelkät "ARTISTI - Kappale" -rivit ilman otsikkoa (Menomesta) ---
+    dash_lines = [
+        l.strip() for l in description.splitlines()
+        if ' - ' in l.strip()
+        and not re.match(r'^klo\s', l.strip(), re.I)
+        and len(l.strip()) > 5
+    ]
+    if len(dash_lines) >= 5:
+        for line in dash_lines:
+            parts = line.split(' - ', 1)
+            artist, title = parts[0].strip(), parts[1].strip()
+            title = re.sub(r'\s*/\s*\S.*$', '', title).strip()
+            if artist and title and len(artist) < 80:
+                tracks.append({"artist": artist, "title": title})
+        return tracks
+
+    # --- Moodi 3 (alkuperäinen): 'Artisti: Kappale' tai 'N. Artisti: Kappale' ---
     for line in description.splitlines():
         line = line.strip()
         if ":" in line and len(line) > 5:
             parts = line.split(":", 1)
             artist = parts[0].strip()
             title = parts[1].strip()
-            # Poista juokseva numero artistin edestä: "1. Foo" tai "1.Foo"
             artist = re.sub(r"^\d+\.\s*", "", artist).strip()
-            # Poista vuosiluku kappaleen lopusta: "Foo (1983)" tai "Foo - Live (1992)"
             title = re.sub(r"\s*\(\d{4}\)\s*$", "", title).strip()
-            # Poista tekijätiedot sulkeissa: "Foo (Tekijä, Toinen)"
             title = re.sub(r"\s*\([^)]{0,60}\)\s*$", "", title).strip()
-            # Poista välilehtimerkki ja sen jälkeen tuleva teksti (tekijätiedot)
             title = title.split("\t")[0].strip()
-            # Suodatetaan pois selvästi ei-kappaleet
             if artist and title and len(artist) < 80 and not artist.lower().startswith("ohjelma"):
                 tracks.append({"artist": artist, "title": title})
     return tracks

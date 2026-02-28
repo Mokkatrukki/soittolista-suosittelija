@@ -14,6 +14,7 @@ dist/
 # Data
 data/app.db
 data/examples.json
+data/covers/
 
 # Claude Code
 .claude/settings.local.json

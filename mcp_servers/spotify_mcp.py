@@ -4,6 +4,7 @@ Lukee OAuth-tokenin suoraan SQLite-tietokannasta (sama kuin web-sovellus).
 Käytä web-sovelluksen kautta ensin kirjautuaksesi sisään.
 """
 import asyncio
+import base64
 import sys
 import os
 import time
@@ -93,6 +94,31 @@ async def _post(path: str, json: dict = None) -> dict:
         )
         resp.raise_for_status()
         return resp.json()
+
+
+async def _put(path: str, json: dict = None) -> dict:
+    token = await _get_token()
+    async with httpx.AsyncClient() as client:
+        resp = await client.put(
+            f"{SPOTIFY_BASE}{path}",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json=json or {},
+        )
+        resp.raise_for_status()
+        return resp.json() if resp.content else {}
+
+
+async def _delete(path: str, json: dict = None) -> dict:
+    token = await _get_token()
+    async with httpx.AsyncClient() as client:
+        resp = await client.request(
+            "DELETE",
+            f"{SPOTIFY_BASE}{path}",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json=json or {},
+        )
+        resp.raise_for_status()
+        return resp.json() if resp.content else {}
 
 
 @mcp.tool()
@@ -228,6 +254,91 @@ async def get_artist_albums(artist_id: str, limit: int = 10) -> list[dict]:
         }
         for a in data.get("items", [])
     ]
+
+
+@mcp.tool()
+async def remove_tracks_from_playlist(playlist_id: str, uris: list[str], snapshot_id: str = "") -> dict:
+    """Poista kappaleita soittolistalta. uris = ['spotify:track:xxx', ...]. Max 100 kerralla."""
+    body: dict = {"tracks": [{"uri": u} for u in uris[:100]]}
+    if snapshot_id:
+        body["snapshot_id"] = snapshot_id
+    data = await _delete(f"/playlists/{playlist_id}/tracks", body)
+    return {"snapshot_id": data.get("snapshot_id"), "removed": len(uris[:100])}
+
+
+@mcp.tool()
+async def reorder_playlist_items(
+    playlist_id: str,
+    range_start: int,
+    insert_before: int,
+    range_length: int = 1,
+    snapshot_id: str = "",
+) -> dict:
+    """Järjestä soittolistan kappaleet uudelleen.
+
+    range_start: ensimmäisen siirrettävän kappaleen indeksi (0-pohjainen)
+    insert_before: kohdeindeksi (kappaleet sijoitetaan tämän indeksin eteen)
+    range_length: siirrettävien kappaleiden määrä (oletus 1)
+
+    Esim. siirrä viimeinen (indeksi 9) kymmen kappaleen listassa alkuun:
+      range_start=9, insert_before=0
+    """
+    body: dict = {
+        "range_start": range_start,
+        "insert_before": insert_before,
+        "range_length": range_length,
+    }
+    if snapshot_id:
+        body["snapshot_id"] = snapshot_id
+    data = await _put(f"/playlists/{playlist_id}/items", body)
+    return {"snapshot_id": data.get("snapshot_id")}
+
+
+@mcp.tool()
+async def update_playlist(
+    playlist_id: str,
+    name: str = "",
+    description: str = "",
+    public: bool | None = None,
+    collaborative: bool | None = None,
+) -> dict:
+    """Muokkaa soittolistan nimeä ja/tai kuvausta.
+
+    Jätä kenttä tyhjäksi / None jos et halua muuttaa sitä.
+    collaborative voidaan asettaa true:ksi vain yksityisille soittolistoille.
+    """
+    body: dict = {}
+    if name:
+        body["name"] = name
+    if description:
+        body["description"] = description
+    if public is not None:
+        body["public"] = public
+    if collaborative is not None:
+        body["collaborative"] = collaborative
+    await _put(f"/playlists/{playlist_id}", body)
+    return {"updated": True, "playlist_id": playlist_id}
+
+
+@mcp.tool()
+async def upload_playlist_cover(playlist_id: str, image_base64: str) -> dict:
+    """Lataa kansikuva soittolistalle. image_base64 = base64-enkoodattu JPEG.
+
+    Max 256 KB. Vaatii ugc-image-upload -scopen.
+    """
+    size_kb = len(image_base64) / 1024
+    if size_kb > 256:
+        return {"success": False, "error": f"Kuva liian suuri: {size_kb:.1f} KB (max 256 KB)"}
+
+    token = await _get_token()
+    async with httpx.AsyncClient() as client:
+        resp = await client.put(
+            f"{SPOTIFY_BASE}/playlists/{playlist_id}/images",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "image/jpeg"},
+            content=image_base64.encode(),
+        )
+        resp.raise_for_status()
+    return {"success": True, "playlist_id": playlist_id}
 
 
 if __name__ == "__main__":

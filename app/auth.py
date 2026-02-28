@@ -23,6 +23,7 @@ SCOPES = " ".join([
     "user-read-private",
     "user-top-read",
     "user-read-recently-played",
+    "ugc-image-upload",
 ])
 
 

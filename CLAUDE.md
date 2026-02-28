@@ -97,6 +97,7 @@ playlist-modify-private
 user-read-private
 user-top-read
 user-read-recently-played
+ugc-image-upload
 ```
 
 Token tallennetaan SQLiteen käyttäjäkohtaisesti. Refresh automaattisesti kun token vanhenee.
