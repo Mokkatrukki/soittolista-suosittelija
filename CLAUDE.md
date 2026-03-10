@@ -59,6 +59,7 @@ Virallinen changelog: https://developer.spotify.com/changelog
 - `POST /me/playlists` — luo soittolista
 - `GET /playlists/{id}/items` — soittolistan kappaleet, limit max=50
 - `POST /playlists/{id}/items` — lisää kappaleita
+- `DELETE /playlists/{id}/items` — poista kappaleita; body: `{"items":[{"uri":"..."}]}` (EI `tracks`)
 - `GET /artists/{id}` — yksittäinen artisti
 - `GET /artists/{id}/albums` — artistin albumit (käytä uusien julkaisujen hakuun)
 - `GET /albums/{id}` — yksittäinen albumi

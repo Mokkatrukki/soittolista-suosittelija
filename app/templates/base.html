@@ -11,6 +11,9 @@
     <header>
         <nav>
             <a href="/" class="logo">🎵 Soittolista</a>
+            <a href="/create" class="nav-link">Luo soittolista</a>
+            <a href="/discover" class="nav-link">Discover</a>
+            <a href="/explore" class="nav-link">Verkosto</a>
             {% if user_id %}
                 <span class="user">{{ display_name }}</span>
                 <a href="/auth/logout" class="btn btn-sm">Kirjaudu ulos</a>

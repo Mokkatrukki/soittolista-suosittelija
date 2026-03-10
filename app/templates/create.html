@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Luo soittolista — Soittolista-suosittelija{% endblock %}
+
+{% block content %}
+<div class="create-header">
+    <h1>Luo soittolista</h1>
+    <p class="create-subtitle">Kerro Maestrolle millaista musiikkia haluat — hän rakentaa soittolistan sinulle.</p>
+</div>
+
+{% if not user_id %}
+<div class="discover-login">
+    <p>Kirjaudu Spotifylla käyttääksesi soittolistan luontia.</p>
+    <a href="/auth/login" class="btn btn-primary btn-lg">Kirjaudu Spotifylla</a>
+</div>
+{% else %}
+
+<div class="create-layout">
+    <div class="create-chat-panel">
+        <div class="create-chat-topbar">
+            <span class="chat-title">Maestro DJ</span>
+            <button class="btn btn-sm"
+                    hx-post="/create/reset"
+                    hx-swap="none"
+                    title="Aloita alusta">Tyhjennä</button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages">
+            <div class="chat-msg ai">
+                <div class="chat-bubble ai-bubble">
+                    Moi! Olen Maestro, DJ-assistenttisi. Millainen fiilis soittolistaan — minkälaista musiikkia haluat tänään? 🎵
+                </div>
+            </div>
+        </div>
+
+        <form class="chat-form"
+              hx-post="/create/chat"
+              hx-target="#chat-messages"
+              hx-swap="beforeend"
+              hx-on::before-request="chatSend(this)"
+              hx-on::after-settle="scrollChat(); document.getElementById('chat-input').focus()">
+            <input id="chat-input"
+                   name="message"
+                   type="text"
+                   class="chat-input"
+                   placeholder="Kirjoita viestisi..."
+                   autocomplete="off"
+                   required>
+            <button type="submit" class="btn btn-primary chat-send">Lähetä</button>
+        </form>
+
+<script>
+function chatSend(form) {
+    const input = form.querySelector('#chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    const chat = document.getElementById('chat-messages');
+
+    // Lisää käyttäjän viesti heti
+    const userDiv = document.createElement('div');
+    userDiv.className = 'chat-msg user';
+    const escaped = msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    userDiv.innerHTML = '<div class="chat-bubble user-bubble">' + escaped + '</div>';
+    chat.appendChild(userDiv);
+
+    // Lisää typing-indikaattori
+    const typingDiv = document.createElement('div');
+    typingDiv.id = 'typing-indicator';
+    typingDiv.className = 'chat-msg ai';
+    typingDiv.innerHTML = '<div class="chat-bubble ai-bubble typing-bubble">' +
+        '<span class="typing-dot"></span>' +
+        '<span class="typing-dot"></span>' +
+        '<span class="typing-dot"></span>' +
+        '</div>';
+    chat.appendChild(typingDiv);
+    scrollChat();
+
+    form.reset();
+}
+
+function scrollChat() {
+    const chat = document.getElementById('chat-messages');
+    if (chat) chat.scrollTop = chat.scrollHeight;
+}
+</script>
+    </div>
+
+    <div class="create-tracks-panel">
+        <div id="track-area" style="display:none">
+            <!-- Kappaleet ilmestyvät tähän kun AI on valmis -->
+        </div>
+        <div id="playlist-result">
+            <!-- Soittolistan luonnin tulos -->
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

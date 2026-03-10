@@ -19,6 +19,21 @@
       "command": "uv",
       "args": ["run", "python", "mcp_servers/discogs_mcp.py"],
       "cwd": "/home/mokka/projektit/soittolista-suosittelija"
+    },
+    "music_intelligence": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/music_intelligence_mcp.py"],
+      "cwd": "/home/mokka/projektit/soittolista-suosittelija"
+    },
+    "musicbrainz": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/musicbrainz_mcp.py"],
+      "cwd": "/home/mokka/projektit/soittolista-suosittelija"
+    },
+    "artist_tracks": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/artist_tracks_mcp.py"],
+      "cwd": "/home/mokka/projektit/soittolista-suosittelija"
     }
   }
 }

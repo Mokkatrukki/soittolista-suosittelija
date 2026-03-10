@@ -1,0 +1,44 @@
+{# Fragmentti: kappalelista + luo-nappi. Renderöidään /create/confirm-vastauksen sisälle #track-area:han. #}
+{% if not tracks %}
+<p class="create-error" style="padding:1.5rem 0">
+    Kappaleita ei löydetty. Kokeile eri hakusanoja tai aloita alusta.
+</p>
+{% else %}
+<div class="track-area-header">
+    <h2 class="track-area-title">{{ playlist_name }}</h2>
+    {% if playlist_description %}
+    <p class="track-area-desc">{{ playlist_description }}</p>
+    {% endif %}
+</div>
+
+<form hx-post="/create/playlist"
+      hx-target="#playlist-result"
+      hx-swap="innerHTML">
+    <input type="hidden" name="playlist_name" value="{{ playlist_name }}">
+    <input type="hidden" name="playlist_description" value="{{ playlist_description }}">
+
+    <div class="track-grid create-track-grid">
+        {% for track in tracks %}
+        <label class="track-card create-track-card">
+            <input type="checkbox" name="uri" value="{{ track.uri }}" checked class="track-checkbox">
+            {% if track.image_url %}
+            <img class="track-img" src="{{ track.image_url }}" alt="{{ track.title }}">
+            {% else %}
+            <div class="track-img track-img-placeholder">&#9835;</div>
+            {% endif %}
+            <div class="track-info">
+                <div class="track-title">{{ track.title }}</div>
+                <div class="track-artist">{{ track.artist }}</div>
+            </div>
+        </label>
+        {% endfor %}
+    </div>
+
+    <div class="create-actions">
+        <span class="create-count">{{ tracks | length }} kappaletta</span>
+        <button type="submit" class="btn btn-primary btn-lg">
+            Luo soittolista Spotifyhin
+        </button>
+    </div>
+</form>
+{% endif %}

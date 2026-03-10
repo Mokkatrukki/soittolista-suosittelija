@@ -1,0 +1,23 @@
+<div class="explore-result">
+    <div class="explore-result-icon">&#9835;</div>
+    <h1>Soittolista luotu!</h1>
+    <p class="explore-result-name">{{ playlist_name }}</p>
+    <p class="explore-result-meta">{{ track_count }} kappaletta &middot; {{ selected | length }} artistia</p>
+    {% if playlist_url %}
+    <a href="{{ playlist_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">
+        Avaa Spotifyssa
+    </a>
+    {% endif %}
+    <div class="explore-result-actions">
+        <a href="/explore" class="btn">Luo uusi verkosto</a>
+        <a href="/create" class="btn">Luo soittolista chatilla</a>
+    </div>
+    {% if selected %}
+    <div class="explore-result-artists">
+        <span class="explore-result-artists-label">Artistit:</span>
+        {% for artist in selected %}
+        <span class="genre-tag">{{ artist }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>

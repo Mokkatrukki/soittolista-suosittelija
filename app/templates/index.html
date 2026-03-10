@@ -4,53 +4,11 @@
 
 {% block content %}
 {% if user_id %}
-    <section class="hero">
+    <section class="hero centered">
         <h1>Hei, {{ display_name }}!</h1>
-        <p>Mitä musiikkia haluat kuunnella?</p>
+        <p>Kerro Claudelle chatissa millaista musiikkia haluat.</p>
+        <a href="/discover" class="btn btn-primary btn-lg">Avaa Discover</a>
     </section>
-
-    <section class="options">
-        <h2>Valitse tapa</h2>
-        <div class="option-grid">
-            <button class="option-card"
-                    hx-get="/playlist/form?mode=custom"
-                    hx-target="#playlist-area"
-                    hx-swap="innerHTML">
-                <span class="icon">✍️</span>
-                <strong>Kerro itse</strong>
-                <p>Kirjoita millaista musiikkia haluat</p>
-            </button>
-
-            <button class="option-card"
-                    hx-get="/playlist/form?mode=top"
-                    hx-target="#playlist-area"
-                    hx-swap="innerHTML">
-                <span class="icon">🔥</span>
-                <strong>Suosittua nyt</strong>
-                <p>Last.fm:n tämän viikon top-kappaleet</p>
-            </button>
-
-            <button class="option-card"
-                    hx-get="/playlist/form?mode=personal"
-                    hx-target="#playlist-area"
-                    hx-swap="innerHTML">
-                <span class="icon">🎯</span>
-                <strong>Sinulle sopivaa</strong>
-                <p>Perustuu Spotify-historiaasi</p>
-            </button>
-
-            <button class="option-card"
-                    hx-get="/playlist/form?mode=yle"
-                    hx-target="#playlist-area"
-                    hx-swap="innerHTML">
-                <span class="icon">📻</span>
-                <strong>Yle tällä viikolla</strong>
-                <p>Ylen musiikkiohjelmien kappaleet</p>
-            </button>
-        </div>
-    </section>
-
-    <div id="playlist-area"></div>
 
 {% else %}
     <section class="hero centered">

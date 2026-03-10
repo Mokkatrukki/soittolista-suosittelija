@@ -198,6 +198,22 @@ async def tag_top_artists(tag: str, limit: int = 20) -> list[dict]:
 
 
 @mcp.tool()
+async def tag_info(tag: str) -> dict:
+    """Hae tagin metadata: käyttäjämäärä (reach), käyttökerrat (taggings) ja lyhyt kuvaus.
+    Hyödyllinen tagin laadun arviointiin — korkea taggings = vakiintunut genre.
+    """
+    data = await _call("tag.getInfo", {"tag": tag})
+    t = data.get("tag", {})
+    return {
+        "name": t.get("name"),
+        "reach": int(t.get("reach", 0)),
+        "taggings": int(t.get("taggings", 0)),
+        "streamable": t.get("streamable") == "1",
+        "summary": (t.get("wiki", {}).get("summary", "") or "")[:300],
+    }
+
+
+@mcp.tool()
 async def tag_similar(tag: str) -> list[dict]:
     """Hae samanlaiset tagit/genret. Hyvä genre-laajennukseen."""
     data = await _call("tag.getSimilar", {"tag": tag})

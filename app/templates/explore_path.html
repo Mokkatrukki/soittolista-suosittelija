@@ -1,0 +1,37 @@
+<div class="path-tree-header">Puurakenne</div>
+<div class="path-tree">
+{% for node in path %}
+<div class="path-node{% if node.focus %} focus{% endif %}" data-depth="{{ node.depth }}">
+    <div class="path-node-content" style="padding-left: {{ [node.depth, 5] | min * 16 }}px">
+        {% if node.depth > 0 %}
+        <span class="path-connector" aria-hidden="true">{% if node.depth > 5 %}&#8627; {% else %}&#9500;&#9472; {% endif %}</span>
+        {% endif %}
+        <button class="focus-toggle{% if node.focus %} active{% endif %}"
+                title="{% if node.focus %}Poista fokuksesta{% else %}Lisää fokukseen{% endif %}"
+                hx-post="/explore/focus-toggle"
+                hx-vals='{"artist": {{ node.name | tojson }}}'
+                hx-include="#explore-state"
+                hx-target="#next-level"
+                hx-swap="innerHTML">
+            {% if node.focus %}<span class="focus-dot-on">&#9679;</span>{% else %}<span class="focus-dot-off">&#8211;</span>{% endif %}
+        </button>
+        <button class="path-select-btn{% if node.name in selected %} selected{% endif %}"
+                title="{% if node.name in selected %}Poista valinnasta{% else %}Lisää soittolistaan{% endif %}"
+                hx-post="/explore/select-toggle"
+                hx-vals='{"artist": {{ node.name | tojson }}}'
+                hx-include="#explore-state"
+                hx-target="#next-level"
+                hx-swap="innerHTML">
+            {% if node.name in selected %}&#9746;{% else %}&#9744;{% endif %}
+        </button>
+        <span class="path-name">{{ node.name }}</span>
+        {% if node.focus %}<span class="path-focus-badge">fokus</span>{% endif %}
+    </div>
+    {% if node.tags %}
+    <div class="path-node-tags" style="padding-left: {{ [node.depth, 5] | min * 16 + 50 }}px">
+        {{ node.tags[:3] | join(' · ') }}
+    </div>
+    {% endif %}
+</div>
+{% endfor %}
+</div>

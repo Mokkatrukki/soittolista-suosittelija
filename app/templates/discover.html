@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Discover — Soittolista-suosittelija{% endblock %}
+
+{% block content %}
+<div class="discover-header">
+    <h1>Discover</h1>
+    <p class="discover-subtitle">Kerro Claudelle chatissa millaista musiikkia haluat — kappaleet ilmestyvät alle automaattisesti.</p>
+</div>
+
+{% if not user_id %}
+<div class="discover-login">
+    <p>Kirjaudu Spotifylla käyttääksesi Discover-sivua.</p>
+    <a href="/auth/login" class="btn btn-primary btn-lg">Kirjaudu Spotifylla</a>
+</div>
+{% else %}
+
+<div class="discover-devices-wrap">
+    <div id="device-area"
+         hx-get="/discover/player/devices"
+         hx-trigger="load"
+         hx-target="#device-area"
+         hx-swap="innerHTML">
+        <span class="muted">Haetaan laitteita…</span>
+    </div>
+</div>
+
+<div id="track-area"
+     hx-get="/discover/current"
+     hx-trigger="load, every 3s"
+     hx-target="#track-area"
+     hx-swap="innerHTML">
+    <div class="discover-empty">
+        <span class="discover-empty-icon">🎵</span>
+        <p>Ei kappaleita vielä. Pyydä Claudelta ehdotuksia chatissa.</p>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

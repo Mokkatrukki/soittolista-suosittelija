@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Artistiverkosto — Soittolista-suosittelija{% endblock %}
+
+{% block content %}
+<div class="explore-start">
+    <div class="explore-start-hero">
+        <h1>Artistiverkosto</h1>
+        <p>Navigoi artistiverkostossa, kerää soittolista.</p>
+    </div>
+
+    {% if not user_id %}
+    <div class="discover-login">
+        <p>Kirjaudu Spotifylla käyttääksesi Artistiverkostoa.</p>
+        <a href="/auth/login" class="btn btn-primary btn-lg">Kirjaudu Spotifylla</a>
+    </div>
+    {% else %}
+    <form hx-post="/explore/start"
+          hx-target="main"
+          hx-swap="innerHTML"
+          hx-indicator="#explore-start-spinner"
+          class="explore-start-form">
+        <div class="explore-start-input-row">
+            <input type="text"
+                   name="seed"
+                   class="explore-seed-input"
+                   placeholder="Kirjoita lähtöartisti, esim. YUP"
+                   autocomplete="off"
+                   autofocus
+                   required>
+            <button type="submit" class="btn btn-primary btn-lg">Aloita &rarr;</button>
+        </div>
+        <span id="explore-start-spinner" class="htmx-indicator explore-spinner">Ladataan...</span>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

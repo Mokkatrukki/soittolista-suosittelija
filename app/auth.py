@@ -24,6 +24,8 @@ SCOPES = " ".join([
     "user-top-read",
     "user-read-recently-played",
     "ugc-image-upload",
+    "user-read-playback-state",
+    "user-modify-playback-state",
 ])
 
 
@@ -120,7 +122,10 @@ async def get_valid_token(user_id: str) -> str:
         raise HTTPException(401, "Ei kirjautunut")
 
     if token_data["expires_at"] - time.time() < 60:
-        token_data = await _refresh_token(user_id, token_data["refresh_token"])
+        try:
+            token_data = await _refresh_token(user_id, token_data["refresh_token"])
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(401, f"Token refresh epäonnistui ({e.response.status_code}) — kirjaudu uudelleen") from e
 
     return token_data["access_token"]
 
