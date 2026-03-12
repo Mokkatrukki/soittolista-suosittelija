@@ -34,6 +34,11 @@
       "command": "uv",
       "args": ["run", "python", "mcp_servers/artist_tracks_mcp.py"],
       "cwd": "/home/mokka/projektit/soittolista-suosittelija"
+    },
+    "finnish_charts": {
+      "command": "uv",
+      "args": ["run", "python", "mcp_servers/finnish_charts_mcp.py"],
+      "cwd": "/home/mokka/projektit/soittolista-suosittelija"
     }
   }
 }

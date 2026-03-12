@@ -21,6 +21,11 @@ TYYPILLISET KÄYTTÖTAPAUKSET JA SUOSITELTU TYÖKALUKETJU
    Kaivaa Discogs-julkaisujen extraartists: vierailijat, live-bändi,
    tuottajat. Hyvä täydennys get_artist_universe:lle.
 
+5. "Löydä artisteja joilla on sama sound DNA — jaettu tuottaja"
+   → find_producer_connections()
+   Hakee artistin tuottajat Discogsista ja etsii käänteisesti mitä muuta
+   nämä tuottajat ovat tuottaneet. Löytää yhteyksiä joita genre/tag-haku ei löydä.
+
    Tyypillinen yhdistelmä deep diveen:
      a) get_artist_universe(resolve_spotify=True)   ← bändit + sivuprojektit
      b) get_artist_collaborators()                  ← yhteistyöartistit
@@ -57,6 +62,9 @@ Deep-dive:
 Yhteistyöartistit:
   get_artist_collaborators(artist, max_releases)
     → Discogs extraartists: live-muusikot, vierailijat, tuottajat
+
+  find_producer_connections(artist, max_releases, max_producers)
+    → Käänteinen tuottajahaku: artisti → tuottajat → muut tuottajan artistit
     → Kevyt täydennys universe-hakuun — suorita erikseen tarvittaessa
 
 Apuvälineet:
@@ -1145,6 +1153,176 @@ async def get_artist_universe(
             "aliases": [{"name": a["name"]} for a in discogs_aliases],
         },
         "candidates": candidates,
+    }
+
+
+@mcp.tool()
+async def find_producer_connections(
+    artist: str,
+    max_releases: int = 5,
+    max_producers: int = 3,
+) -> dict:
+    """Löydä artisteja joita yhdistää sama tuottaja.
+
+    Hakee artistin julkaisujen tuottajat Discogsista, sitten etsii mitä muita
+    artisteja nämä tuottajat ovat tuottaneet. Palauttaa artistit jotka jakavat
+    saman "sound DNA":n tuottajakytkösten kautta.
+
+    Tämä löytää yhteyksiä joita genre/tag-haku ei löydä — esim. post-punk-bändi
+    joka jakaa tuottajan jazztaiteilijan kanssa.
+
+    Args:
+        artist: Artistin nimi
+        max_releases: Kuinka monta artistin julkaisua tutkitaan (oletus 5)
+        max_producers: Kuinka monen tuottajan verkosto haetaan (oletus 3)
+
+    Returns:
+        {
+          artist: str,
+          producers: [{name, discogs_id, appearances}],
+          connected_artists: [{name, shared_producers: [str], connection_strength: int}]
+        }
+    """
+    PRODUCER_ROLES = {"produced by", "co-produced by", "co-producer", "executive producer", "producer"}
+
+    # 1. Etsi artisti Discogsista
+    search_data = await _discogs_get("/database/search", {"q": artist, "type": "artist", "per_page": 5})
+    results = search_data.get("results", [])
+    if not results:
+        return {"artist": artist, "producers": [], "connected_artists": []}
+
+    artist_id = results[0]["id"]
+    artist_name_lower = artist.lower()
+
+    # 2. Hae artistin viimeisimmät albumit
+    releases_data = await _discogs_get(
+        f"/artists/{artist_id}/releases",
+        {"sort": "year", "sort_order": "desc", "per_page": 25},
+    )
+    releases = releases_data.get("releases", [])
+
+    def _is_own_album(r: dict) -> bool:
+        fmt = (r.get("format") or "").lower()
+        rtype = (r.get("type") or "").lower()
+        role = (r.get("role") or "").lower()
+        # Vain artistin omat albumit — ei kokoelmia/tributeja
+        is_album = "album" in rtype or ("main" in role and "single" not in fmt and "ep" not in fmt)
+        is_main = "main" in role or "main" in rtype
+        return is_album and is_main
+
+    albums = [r for r in releases if _is_own_album(r)][:max_releases]
+    if not albums:
+        albums = [r for r in releases if "album" in (r.get("type") or "").lower()][:max_releases]
+    if not albums:
+        albums = releases[:max_releases]
+
+    # 3. Hae albumien tiedot rinnakkain
+    # Master-tyyppisille käytetään main_release-ID:tä, muuten suoraan r['id']
+    def _release_id(r: dict) -> int:
+        if r.get("type") == "master" and r.get("main_release"):
+            return r["main_release"]
+        return r["id"]
+
+    release_details = await asyncio.gather(
+        *[_discogs_get(f"/releases/{_release_id(r)}") for r in albums],
+        return_exceptions=True,
+    )
+
+    # 4. Kerää tuottajat (joilla on Discogs ID)
+    from collections import defaultdict
+    producers: dict[str, dict] = defaultdict(lambda: {"name": "", "discogs_id": None, "appearances": 0})
+
+    for detail in release_details:
+        if isinstance(detail, Exception):
+            continue
+        # Release-tason extraartists
+        for ea in detail.get("extraartists", []):
+            role = ea.get("role", "").strip().lower()
+            if any(pr in role for pr in PRODUCER_ROLES):
+                name = ea.get("name", "")
+                pid = ea.get("id")
+                if name and pid:
+                    key = str(pid)
+                    producers[key]["name"] = name
+                    producers[key]["discogs_id"] = pid
+                    producers[key]["appearances"] += 1
+        # Track-tason extraartists
+        for track in detail.get("tracklist", []):
+            for ea in track.get("extraartists", []):
+                role = ea.get("role", "").strip().lower()
+                if any(pr in role for pr in PRODUCER_ROLES):
+                    name = ea.get("name", "")
+                    pid = ea.get("id")
+                    if name and pid:
+                        key = str(pid)
+                        producers[key]["name"] = name
+                        producers[key]["discogs_id"] = pid
+                        producers[key]["appearances"] += 1
+
+    top_producers = sorted(producers.values(), key=lambda p: -p["appearances"])[:max_producers]
+    if not top_producers:
+        return {"artist": artist, "producers": [], "connected_artists": []}
+
+    SKIP_ARTIST_NAMES = {"various", "various artists", "unknown", "unknown artist"}
+
+    def _clean_artist_name(name: str) -> str:
+        """Poistaa Discogs-numeroinnin: 'Crack The Sky (4)' → 'Crack The Sky'"""
+        import re as _re
+        return _re.sub(r"\s*\(\d+\)\s*$", "", name).strip()
+
+    # 5. Hae tuottajien muut projektit rinnakkain
+    async def _get_producer_artists(producer: dict) -> tuple[str, list[str]]:
+        try:
+            data = await _discogs_get(
+                f"/artists/{producer['discogs_id']}/releases",
+                {"sort": "year", "sort_order": "desc", "per_page": 25},
+            )
+            names = []
+            for r in data.get("releases", []):
+                a = _clean_artist_name(r.get("artist", ""))
+                if a and a.lower() != artist_name_lower and a.lower() not in SKIP_ARTIST_NAMES:
+                    names.append(a)
+            return (producer["name"], names)
+        except Exception:
+            return (producer["name"], [])
+
+    producer_results = await asyncio.gather(
+        *[_get_producer_artists(p) for p in top_producers],
+        return_exceptions=True,
+    )
+
+    # 6. Laske yhteydet: artisti → kuinka monen tuottajan kautta löytyy
+    from collections import defaultdict as _dd
+    connections: dict[str, list[str]] = _dd(list)
+
+    for result in producer_results:
+        if isinstance(result, Exception):
+            continue
+        producer_name, artist_names = result
+        for name in artist_names:
+            if name.lower() != artist_name_lower:
+                connections[name].append(producer_name)
+
+    connected_artists = sorted(
+        [
+            {
+                "name": name,
+                "shared_producers": sorted(set(prods)),
+                "connection_strength": len(set(prods)),
+            }
+            for name, prods in connections.items()
+            if name.lower() not in SKIP_ARTIST_NAMES and "/" not in name
+        ],
+        key=lambda x: -x["connection_strength"],
+    )[:20]
+
+    return {
+        "artist": artist,
+        "producers": [
+            {"name": p["name"], "discogs_id": p["discogs_id"], "appearances": p["appearances"]}
+            for p in top_producers
+        ],
+        "connected_artists": connected_artists,
     }
 
 

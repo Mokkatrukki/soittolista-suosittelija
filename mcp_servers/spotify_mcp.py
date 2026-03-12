@@ -259,10 +259,10 @@ async def get_artist_albums(artist_id: str, limit: int = 10) -> list[dict]:
 @mcp.tool()
 async def remove_tracks_from_playlist(playlist_id: str, uris: list[str], snapshot_id: str = "") -> dict:
     """Poista kappaleita soittolistalta. uris = ['spotify:track:xxx', ...]. Max 100 kerralla."""
-    body: dict = {"tracks": [{"uri": u} for u in uris[:100]]}
+    body: dict = {"items": [{"uri": u} for u in uris[:100]]}
     if snapshot_id:
         body["snapshot_id"] = snapshot_id
-    data = await _delete(f"/playlists/{playlist_id}/tracks", body)
+    data = await _delete(f"/playlists/{playlist_id}/items", body)
     return {"snapshot_id": data.get("snapshot_id"), "removed": len(uris[:100])}
 
 

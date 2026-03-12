@@ -86,13 +86,51 @@ Kehityskäytössä näillä tutkitaan musiikkidataa ja rakennetaan soittolistoja
 3. search_tracks_batch + create_playlist + add_tracks_to_playlist
 ```
 
-### 5. Käyttäjän kuunteluhistoriaan perustuva soittolista
+### 5. Tuottajaverkoston kautta löydetty soittolista
+
+```
+Idea: sama tuottaja eri artisteilla = sama "sound DNA", vaikka genre olisi eri.
+Toimii parhaiten artisteille joilla on ulkopuolinen tuottaja (ei itse-tuotettu).
+
+1. find_producer_connections("Arppa")
+   → producers: [{name: "Väinö Karjalainen", appearances: 3}, ...]
+   → connected_artists: [{name: "J. Karjalainen", shared_producers: [...]}, ...]
+
+2. get_artist_tracks(artist, flavor="hits", count=3)
+   per connected_artist (rinnakkain)
+
+3. search_tracks_batch + create_playlist + add_tracks_to_playlist
+```
+
+> **Huom:** Discogs-data vaihtelee — suomalaisilla indie-artisteilla credits saattaa
+> puuttua osasta julkaisuja. Tarkista `appearances`-arvo: jos kaikki tuottajat
+> esiintyvät vain kerran, data on todennäköisesti epäluotettavaa.
+
+---
+
+### 7. Artistin koko uran deep dive
+
+```
+1. get_artist_universe("Pate Mustajärvi", resolve_spotify=True)
+   → löytää: sooloura + Eppu Normaali + muut bändit + aliakset
+   → candidates: kappaleet kaikista projekteista valmiiksi
+
+2. (valinnainen täydennys) get_artist_collaborators("Pate Mustajärvi")
+   → yhteistyöartistit joiden kappaleet voi lisätä mukaan
+
+3. search_tracks_batch + create_playlist + add_tracks_to_playlist
+```
+
+---
+
+### 8. Käyttäjän kuunteluhistoriaan perustuva soittolista
 
 ```
 1. get_top_artists(time_range="medium_term")
    tai get_recently_played()
 
 2. find_similar_artists(artist) per top-artisti
+   tai find_producer_connections(artist) jos halutaan yllättävämpiä yhteyksiä
 
 3. get_artist_tracks(artist, flavor="mixed") per samankaltainen artisti
 
@@ -122,6 +160,9 @@ Kaikki flavorit ottavat artist-nimen suoraan — ei tarvita MBID:tä etukäteen.
 Muut työkalut:
 - `discogs_artist_releases(artist_name, limit=15)` — diskografialista id:ineen
 - `discogs_release_tracks(release_id)` — tietyn julkaisun kapparelista
+- `get_artist_collaborators(artist, max_releases=5)` — Discogs-julkaisujen extraartists: live-muusikot, vierailijat, tuottajat esiintymiskertojen mukaan
+- `get_artist_universe(artist, ...)` — deep dive: sooloura + kaikki bändit (MusicBrainz member_of) + aliakset (Discogs). Paras työkalu "koko ura yhdelle soittolistalle"
+- `find_producer_connections(artist, max_releases=5, max_producers=3)` — tuottajaverkostohaku: artisti → tuottajat → mitä muuta tuottajat ovat tuottaneet. Löytää yhteydet joita genre/tag-haku ei löydä
 
 ---
 
@@ -212,7 +253,7 @@ Diskografia, levy-yhtiöt, julkaisutiedot.
 - `search_labels(query)` — levy-yhtiöhaku
 
 **Tietyn julkaisun/artistin tiedot:**
-- `get_release(release_id)` — julkaisun tiedot + kapparelista
+- `get_release(release_id)` — julkaisun tiedot + kappalelista + `extraartists` (tuottaja, muusikot, miksaaja) + `community` (have/want, rating_average, rating_count)
 - `get_artist(artist_id)` — artistin tiedot
 - `get_artist_releases(artist_id, sort="year")` — diskografia
 - `get_label_releases(label_id)` — labelin kaikki julkaisut

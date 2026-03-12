@@ -164,6 +164,15 @@ async def get_release(release_id: int) -> dict:
     ]
     artists = [{"id": a.get("id"), "name": a.get("name")} for a in data.get("artists", [])]
     labels = [{"name": l.get("name"), "catno": l.get("catno")} for l in data.get("labels", [])]
+    extraartists = [
+        {
+            "id": ea.get("id"),
+            "name": ea.get("name"),
+            "role": ea.get("role"),
+            "tracks": ea.get("tracks", ""),
+        }
+        for ea in data.get("extraartists", [])
+    ]
     return {
         "id": data.get("id"),
         "title": data.get("title"),
@@ -175,7 +184,14 @@ async def get_release(release_id: int) -> dict:
         "formats": [f.get("name") for f in data.get("formats", [])],
         "labels": labels,
         "tracklist": tracks,
+        "extraartists": extraartists,
         "notes": (data.get("notes") or "")[:300],
+        "community": {
+            "have": data.get("community", {}).get("have"),
+            "want": data.get("community", {}).get("want"),
+            "rating_average": data.get("community", {}).get("rating", {}).get("average"),
+            "rating_count": data.get("community", {}).get("rating", {}).get("count"),
+        },
     }
 
 
